@@ -14,7 +14,7 @@ struct irc_opt_str {
 };
 
 enum irc_cmd {
-	//
+	// Connection Registration
 	IRC_PASS,
 	IRC_NICK,
 	IRC_USER,
@@ -23,7 +23,7 @@ enum irc_cmd {
 	IRC_SERVICE,
 	IRC_QUIT,
 	IRC_SQUIT,
-	//
+	// Channel operations
 	IRC_JOIN,
 	IRC_PART,
 	IRC_MODE_CHANNEL,
@@ -32,10 +32,10 @@ enum irc_cmd {
 	IRC_LIST,
 	IRC_INVITE,
 	IRC_KICK,
-	//
+	// Sending messages
 	IRC_PRIVMSG,
 	IRC_NOTICE,
-	//
+	// Server queries and commands
 	IRC_MOTD,
 	IRC_LUSERS,
 	IRC_VERSION,
@@ -46,17 +46,19 @@ enum irc_cmd {
 	IRC_TRACE,
 	IRC_ADMIN,
 	IRC_INFO,
+	// Service Query and Commands
 	IRC_SERVLIST,
 	IRC_SQUERY,
-	//
+	// User based queries
 	IRC_WHO,
 	IRC_WHOIS,
 	IRC_WHOWAS,
+	// Misc. messages
 	IRC_KILL,
 	IRC_PING,
 	IRC_PONG,
 	IRC_ERROR,
-	//
+	// Optional features
 	IRC_AWAY,
 	IRC_REHASH,
 	IRC_DIE,
@@ -66,6 +68,7 @@ enum irc_cmd {
 	IRC_WALLOPS,
 	IRC_USERHOST,
 	IRC_ISON,
+	// Replies
 	IRC_NUMERIC, // Check number
 };
 
