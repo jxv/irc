@@ -334,4 +334,6 @@ struct irc_msg {
 	};
 };
 
+bool irc_parse(const char *line, long len, struct irc_msg *msg);
+
 #endif
