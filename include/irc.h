@@ -72,6 +72,8 @@ enum irc_cmd {
 	IRC_NUMERIC, // Check number
 };
 
+#define IRC_CMD_SIZE (IRC_NUMERIC+1)
+
 struct irc_pass {
 	struct irc_str password;
 };

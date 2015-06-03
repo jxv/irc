@@ -21,7 +21,7 @@ PM_STR(PASS,4)
 struct pm_parser pass_cmd = PM_STRING(&PASS_STR);
 
 static
-bool pass_fn(const union pm_data d, const char *src, long len, struct pm_state *state, union pm_result *res)
+bool pass_fn(const union pm_data d, const char *src, long len, struct pm_state *state, struct pm_result *res)
 {
 	if (pm_out_of_range(src, len, state, res)) {
 		return false;
@@ -34,7 +34,7 @@ bool pass_fn(const union pm_data d, const char *src, long len, struct pm_state *
 		res->error.state = *state;
 		return false;
 	}
-	union pm_result tmp;
+	struct pm_result tmp;
 	struct pm_str str;
 	tmp.value.data.str = &str;
 	if (!pm_parse_step(&pm_trail, src, len, state, &tmp)) {
@@ -55,12 +55,11 @@ struct pm_parser pass = {
 	.fn = pass_fn,
 };
 
-
 PM_STR(NICK,4)
 struct pm_parser nick_cmd = PM_STRING(&NICK_STR);
 
 static
-bool nick_fn(const union pm_data d, const char *src, long len, struct pm_state *state, union pm_result *res)
+bool nick_fn(const union pm_data d, const char *src, long len, struct pm_state *state, struct pm_result *res)
 {
 	if (pm_out_of_range(src, len, state, res)) {
 		return false;
@@ -73,7 +72,7 @@ bool nick_fn(const union pm_data d, const char *src, long len, struct pm_state *
 		res->error.state = *state;
 		return false;
 	}
-	union pm_result tmp;
+	struct pm_result tmp;
 	struct pm_str str;
 	tmp.value.data.str = &str;
 	if (!pm_parse_step(&pm_trail, src, len, state, &tmp)) {
@@ -97,20 +96,20 @@ struct pm_parser nick = {
 
 bool irc_parse(const char *line, long len, struct irc_msg *msg)
 {
-#define MSGS_SIZE 2
-	struct pm_parser msgs[MSGS_SIZE] = {
-		pass,
-		nick,
+	struct pm_parser msgs[IRC_CMD_SIZE] = {
+		[IRC_PASS] = pass,
+		[IRC_NICK] = nick,
 	};
-	
-	struct pm_parsers parsers;
-	parsers.data = msgs;
-	parsers.len = MSGS_SIZE;
+
+	struct pm_parsers parsers = {
+		.data = msgs,
+		.len = 2, // IRC_CMD_SIZE,
+	};
 
 	struct pm_parser choice;
-	pm_choice(&parsers, &choice);
+	pm_choice_try(&parsers, &choice);
 
-	union pm_result res;
+	struct pm_result res;
 	res.value.data.ptr = msg;
 	return pm_parse(&choice, line, len, &res);
 }
