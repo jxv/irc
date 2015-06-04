@@ -100,10 +100,8 @@ struct irc_mode_user {
 
 struct irc_service {
 	struct irc_str nickname;
-	struct irc_str reserved0;
 	struct irc_str distribution;
 	struct irc_str type;
-	struct irc_str reserved1;
 	struct irc_str info;
 };
 

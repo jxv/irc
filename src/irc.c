@@ -2,14 +2,6 @@
 #include <parmach.h>
 #include <stdio.h>
 
-struct irc_str to_irc_str(struct pm_str *str)
-{
-	return (struct irc_str) {
-		.data = (char*)str->data,
-		.len = str->len,
-	};
-}
-
 #define IRC_CMD_GRP 1
 
 #define PM_STR(x,n)\
@@ -24,6 +16,19 @@ struct pm_str x##_STR = {\
 	.self.ptr = (str),\
 	.fn = pm_string_fn,\
 }
+
+struct irc_str to_irc_str(struct pm_str *str)
+{
+	return (struct irc_str) {
+		.data = (char*)str->data,
+		.len = str->len,
+	};
+}
+
+struct pm_parser colon = {
+	.self.prim.c = ':',
+	.fn = pm_char_fn,
+};
 
 PM_STR(PASS,4)
 struct pm_parser pass_cmd = PM_STRING(&PASS_STR);
@@ -194,7 +199,7 @@ bool oper_fn(const union pm_data d, const char *src, long len, struct pm_state *
 		res->error.state = *state;
 		return false;
 	}
-	//  <name>' '
+	// <name>' '
 	r.value.data.str = &name;
 	if (!pm_parse_step(&pm_until_space, src, len, state, &r)) {
 		res->error.state = *state;
@@ -208,7 +213,7 @@ bool oper_fn(const union pm_data d, const char *src, long len, struct pm_state *
 	}
 	// Store result(s)
 	struct irc_msg *msg = res->value.data.ptr;
-	msg->cmd = IRC_USER;
+	msg->cmd = IRC_OPER;
 	msg->oper = (struct irc_oper) {
 		.name = to_irc_str(&name),
 		.password = to_irc_str(&password),
@@ -221,6 +226,133 @@ struct pm_parser oper = {
 	.fn = oper_fn,
 };
 
+PM_STR(MODE,4)
+struct pm_parser mode_cmd = PM_STRING(&MODE_STR);
+
+static
+bool mode_user_fn(const union pm_data d, const char *src, long len, struct pm_state *state, struct pm_result *res)
+{
+	struct pm_result r;
+	struct pm_str nickname, modes;
+	// MODE <nickname> <modes>
+	if (pm_out_of_range(src, len, state, res)) {
+		return false;
+	}
+	// MODE
+	if (!pm_parse_step(&mode_cmd, src, len, state, NULL)) {
+		res->error.state = *state;
+		return false;
+	}
+	// ' '
+	if (!pm_parse_step(&pm_space, src, len, state, NULL)) {
+		res->error.state = *state;
+		return false;
+	}
+	// <nickname>' '
+	r.value.data.str = &nickname;
+	if (!pm_parse_step(&pm_until_space, src, len, state, &r)) {
+		res->error.state = *state;
+		return false;
+	}
+	// <modes>
+	r.value.data.str = &modes;
+	if (!pm_parse_step(&pm_trail, src, len, state, &r)) {
+		res->error.state = *state;
+		return false;
+	}
+	// Store result(s)
+	struct irc_msg *msg = res->value.data.ptr;
+	msg->cmd = IRC_MODE_USER;
+	msg->mode_user = (struct irc_mode_user) {
+		.nickname = to_irc_str(&nickname),
+		.modes = to_irc_str(&modes),
+	};
+	return true;
+}
+
+struct pm_parser mode_user = {
+	.self.ptr = NULL,
+	.fn = mode_user_fn,
+};
+
+PM_STR(SERVICE,7)
+struct pm_parser service_cmd = PM_STRING(&SERVICE_STR);
+
+static
+bool service_fn(const union pm_data d, const char *src, long len, struct pm_state *state, struct pm_result *res)
+{
+	struct pm_result r;
+	struct pm_str nickname, distribution, type, info;
+	// SERVICE <nickname> <reserved> <distribution> <type> <reserved> <info>
+	if (pm_out_of_range(src, len, state, res)) {
+		return false;
+	}
+	// SERVICE
+	if (!pm_parse_step(&service_cmd, src, len, state, NULL)) {
+		res->error.state = *state;
+		return false;
+	}
+	// ' '
+	if (!pm_parse_step(&pm_space, src, len, state, NULL)) {
+		res->error.state = *state;
+		return false;
+	}
+	// <nickname>' '
+	r.value.data.str = &nickname;
+	if (!pm_parse_step(&pm_until_space, src, len, state, &r)) {
+		res->error.state = *state;
+		return false;
+	}
+	// <reserved>' '
+	if (!pm_parse_step(&pm_until_space, src, len, state, NULL)) {
+		res->error.state = *state;
+		return false;
+	}
+	// <distribution>' '
+	r.value.data.str = &distribution;
+	if (!pm_parse_step(&pm_until_space, src, len, state, &r)) {
+		res->error.state = *state;
+		return false;
+	}
+	// <type>' '
+	r.value.data.str = &type;
+	if (!pm_parse_step(&pm_until_space, src, len, state, &r)) {
+		res->error.state = *state;
+		return false;
+	}
+	// <reserved>' '
+	if (!pm_parse_step(&pm_until_space, src, len, state, NULL)) {
+		res->error.state = *state;
+		return false;
+	}
+	// ':'
+	if (!pm_parse_step(&colon, src, len, state, NULL)) {
+		res->error.state = *state;
+		return false;
+	}
+	// <info>
+	r.value.data.str = &info;
+	if (!pm_parse_step(&pm_trail, src, len, state, &r)) {
+		res->error.state = *state;
+		return false;
+	}
+	// Store result(s)
+	struct irc_msg *msg = res->value.data.ptr;
+	msg->cmd = IRC_SERVICE;
+	msg->service = (struct irc_service) {
+		.nickname = to_irc_str(&nickname),
+		.distribution = to_irc_str(&distribution),
+		.type = to_irc_str(&type),
+		.info = to_irc_str(&info),
+	};
+	return true;
+}
+
+struct pm_parser service = {
+	.self.ptr = NULL,
+	.fn = service_fn,
+};
+
 bool irc_parse(const char *line, long len, struct irc_msg *msg)
 {
 	struct pm_parser msgs[IRC_CMD_SIZE] = {
@@ -228,11 +360,13 @@ bool irc_parse(const char *line, long len, struct irc_msg *msg)
 		[IRC_NICK] = nick,
 		[IRC_USER] = user,
 		[IRC_OPER] = oper,
+		[IRC_MODE_USER] = mode_user,
+		[IRC_SERVICE] = service,
 	};
 
 	struct pm_parsers parsers = {
 		.data = msgs,
-		.len = 4, // IRC_CMD_SIZE,
+		.len = 6, // IRC_CMD_SIZE,
 	};
 
 	struct pm_parser choice;
