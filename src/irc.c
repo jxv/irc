@@ -112,7 +112,7 @@ struct pm_parser user_cmd = PM_STRING(&USER_STR);
 static
 bool user_fn(const union pm_data d, const char *src, long len, struct pm_state *state, struct pm_result *res)
 {
-	// USER <user> <mode> * <realname>
+	// USER <user> <mode> * :<realname>
 	struct pm_result r;
 	struct pm_str user, mode, realname;
 	struct irc_msg *msg = res->value.data.ptr;
@@ -267,7 +267,7 @@ struct pm_parser service_cmd = PM_STRING(&SERVICE_STR);
 static
 bool service_fn(const union pm_data d, const char *src, long len, struct pm_state *state, struct pm_result *res)
 {
-	// SERVICE <nickname> <reserved> <distribution> <type> <reserved> <info>
+	// SERVICE <nickname> <reserved> <distribution> <type> <reserved> :<info>
 	struct pm_result r;
 	struct pm_str nickname, distribution, type, info;
 	struct irc_msg *msg = res->value.data.ptr;
@@ -337,7 +337,7 @@ struct pm_parser quit_cmd = PM_STRING(&QUIT_STR);
 static
 bool quit_fn(const union pm_data d, const char *src, long len, struct pm_state *state, struct pm_result *res)
 {
-	// QUIT [<msg>]
+	// QUIT[ :<msg>]
 	struct pm_result r;
 	struct pm_str quit_msg;
 	struct irc_msg *msg = res->value.data.ptr;
@@ -387,6 +387,55 @@ struct pm_parser quit = {
 	.fn = quit_fn,
 };
 
+PM_STR(SQUIT,5)
+struct pm_parser squit_cmd = PM_STRING(&SQUIT_STR);
+
+static
+bool squit_fn(const union pm_data d, const char *src, long len, struct pm_state *state, struct pm_result *res)
+{
+	// SQUIT <server> :<comment>
+	struct pm_result r;
+	struct pm_str server, comment;
+	struct irc_msg *msg = res->value.data.ptr;
+	// SQUIT
+	if (!pm_parse_step(&service_cmd, src, len, state, NULL)) {
+		goto fail;
+	}
+	// ' '
+	if (!pm_parse_step(&pm_space, src, len, state, NULL)) {
+		goto fail;
+	}
+	// <server>' '
+	r.value.data.str = &server;
+	if (!pm_parse_step(&pm_until_space, src, len, state, &r)) {
+		goto fail;
+	}
+	// ':'
+	if (!pm_parse_step(&colon, src, len, state, NULL)) {
+		goto fail;
+	}
+	// <comment>
+	r.value.data.str = &comment;
+	if (!pm_parse_step(&pm_trail, src, len, state, &r)) {
+		goto fail;
+	}
+	// Store result(s)
+	msg->cmd = IRC_SQUIT;
+	msg->squit = (struct irc_squit) {
+		.server = to_irc_str(&server),
+		.comment = to_irc_str(&comment),
+	};
+	return true;
+	// Store failure state
+fail:
+	res->error.state = *state;
+	return false;
+}
+
+struct pm_parser squit = {
+	.self.ptr = NULL,
+	.fn = squit_fn,
+};
 bool irc_parse(const char *line, long len, struct irc_msg *msg)
 {
 	struct pm_parser msgs[IRC_CMD_SIZE] = {
@@ -397,11 +446,12 @@ bool irc_parse(const char *line, long len, struct irc_msg *msg)
 		[IRC_MODE_USER] = mode_user,
 		[IRC_SERVICE] = service,
 		[IRC_QUIT] = quit,
+		[IRC_SQUIT] = squit,
 	};
 
 	struct pm_parsers parsers = {
 		.data = msgs,
-		.len = 6, // IRC_CMD_SIZE,
+		.len = 8, // IRC_CMD_SIZE,
 	};
 
 	struct pm_parser choice;
