@@ -36,12 +36,9 @@ struct pm_parser pass_cmd = PM_STRING(&PASS_STR);
 static
 bool pass_fn(const union pm_data d, const char *src, long len, struct pm_state *state, struct pm_result *res)
 {
+	// PASS <password>
 	struct pm_result r;
 	struct pm_str password;
-	// PASS <password>
-	if (pm_out_of_range(src, len, state, res)) {
-		return false;
-	}
 	// PASS
 	if (!pm_parse_step(&pass_cmd, src, len, state, NULL)) {
 		goto fail;
@@ -77,12 +74,9 @@ struct pm_parser nick_cmd = PM_STRING(&NICK_STR);
 static
 bool nick_fn(const union pm_data d, const char *src, long len, struct pm_state *state, struct pm_result *res)
 {
+	// NICK <nickname>
 	struct pm_result r;
 	struct pm_str nickname;
-	// NICK <nickname>
-	if (pm_out_of_range(src, len, state, res)) {
-		return false;
-	}
 	// NICK
 	if (!pm_parse_step(&nick_cmd, src, len, state, NULL)) {
 		goto fail;
@@ -118,12 +112,9 @@ struct pm_parser user_cmd = PM_STRING(&USER_STR);
 static
 bool user_fn(const union pm_data d, const char *src, long len, struct pm_state *state, struct pm_result *res)
 {
+	// USER <user> <mode> * <realname>
 	struct pm_result r;
 	struct pm_str user, mode, realname;
-	// USER <user> <mode> * <realname>
-	if (pm_out_of_range(src, len, state, res)) {
-		return false;
-	}
 	// USER
 	if (!pm_parse_step(&user_cmd, src, len, state, NULL)) {
 		goto fail;
@@ -184,12 +175,9 @@ struct pm_parser oper_cmd = PM_STRING(&OPER_STR);
 static
 bool oper_fn(const union pm_data d, const char *src, long len, struct pm_state *state, struct pm_result *res)
 {
+	// OPER <name> <password>
 	struct pm_result r;
 	struct pm_str name, password;
-	// OPER <name> <password>
-	if (pm_out_of_range(src, len, state, res)) {
-		return false;
-	}
 	// OPER
 	if (!pm_parse_step(&oper_cmd, src, len, state, NULL)) {
 		goto fail;
@@ -233,12 +221,9 @@ struct pm_parser mode_cmd = PM_STRING(&MODE_STR);
 static
 bool mode_user_fn(const union pm_data d, const char *src, long len, struct pm_state *state, struct pm_result *res)
 {
+	// MODE <nickname> <modes>
 	struct pm_result r;
 	struct pm_str nickname, modes;
-	// MODE <nickname> <modes>
-	if (pm_out_of_range(src, len, state, res)) {
-		return false;
-	}
 	// MODE
 	if (!pm_parse_step(&mode_cmd, src, len, state, NULL)) {
 		goto fail;
@@ -282,12 +267,9 @@ struct pm_parser service_cmd = PM_STRING(&SERVICE_STR);
 static
 bool service_fn(const union pm_data d, const char *src, long len, struct pm_state *state, struct pm_result *res)
 {
+	// SERVICE <nickname> <reserved> <distribution> <type> <reserved> <info>
 	struct pm_result r;
 	struct pm_str nickname, distribution, type, info;
-	// SERVICE <nickname> <reserved> <distribution> <type> <reserved> <info>
-	if (pm_out_of_range(src, len, state, res)) {
-		return false;
-	}
 	// SERVICE
 	if (!pm_parse_step(&service_cmd, src, len, state, NULL)) {
 		goto fail;
