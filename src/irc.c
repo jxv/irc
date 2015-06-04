@@ -127,14 +127,12 @@ bool user_fn(const union pm_data d, const char *src, long len, struct pm_state *
 		res->error.state = *state;
 		return false;
 	}
-
 	//  <user>' '
 	r.value.data.str = &user;
 	if (!pm_parse_step(&pm_until_space, src, len, state, &r)) {
 		res->error.state = *state;
 		return false;
 	}
-
 	// <mode>' '
 	r.value.data.str = &mode;
 	if (!pm_parse_step(&pm_until_space, src, len, state, &r)) {
@@ -174,17 +172,67 @@ struct pm_parser user = {
 	.fn = user_fn,
 };
 
+PM_STR(OPER,4)
+struct pm_parser oper_cmd = PM_STRING(&OPER_STR);
+
+static
+bool oper_fn(const union pm_data d, const char *src, long len, struct pm_state *state, struct pm_result *res)
+{
+	struct pm_result r;
+	struct pm_str name, password;
+	// OPER <name> <password>
+	if (pm_out_of_range(src, len, state, res)) {
+		return false;
+	}
+	// OPER
+	if (!pm_parse_step(&oper_cmd, src, len, state, NULL)) {
+		res->error.state = *state;
+		return false;
+	}
+	// ' '
+	if (!pm_parse_step(&pm_space, src, len, state, NULL)) {
+		res->error.state = *state;
+		return false;
+	}
+	//  <name>' '
+	r.value.data.str = &name;
+	if (!pm_parse_step(&pm_until_space, src, len, state, &r)) {
+		res->error.state = *state;
+		return false;
+	}
+	// <realname>
+	r.value.data.str = &password;
+	if (!pm_parse_step(&pm_trail, src, len, state, &r)) {
+		res->error.state = *state;
+		return false;
+	}
+	// Store result(s)
+	struct irc_msg *msg = res->value.data.ptr;
+	msg->cmd = IRC_USER;
+	msg->oper = (struct irc_oper) {
+		.name = to_irc_str(&name),
+		.password = to_irc_str(&password),
+	};
+	return true;
+}
+
+struct pm_parser oper = {
+	.self.ptr = NULL,
+	.fn = oper_fn,
+};
+
 bool irc_parse(const char *line, long len, struct irc_msg *msg)
 {
 	struct pm_parser msgs[IRC_CMD_SIZE] = {
 		[IRC_PASS] = pass,
 		[IRC_NICK] = nick,
 		[IRC_USER] = user,
+		[IRC_OPER] = oper,
 	};
 
 	struct pm_parsers parsers = {
 		.data = msgs,
-		.len = 3, // IRC_CMD_SIZE,
+		.len = 4, // IRC_CMD_SIZE,
 	};
 
 	struct pm_parser choice;
