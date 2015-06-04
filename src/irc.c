@@ -44,25 +44,26 @@ bool pass_fn(const union pm_data d, const char *src, long len, struct pm_state *
 	}
 	// PASS
 	if (!pm_parse_step(&pass_cmd, src, len, state, NULL)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// ' '
 	if (!pm_parse_step(&pm_space, src, len, state, NULL)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// <password>
 	r.value.data.str = &password;
 	if (!pm_parse_step(&pm_trail, src, len, state, &r)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// Store result(s)
 	struct irc_msg *msg = res->value.data.ptr;
 	msg->cmd = IRC_PASS;
 	msg->pass.password = to_irc_str(&password);
 	return true;
+	// Store failure state
+fail:
+	res->error.state = *state;
+	return false;
 }
 
 struct pm_parser pass = {
@@ -84,25 +85,26 @@ bool nick_fn(const union pm_data d, const char *src, long len, struct pm_state *
 	}
 	// NICK
 	if (!pm_parse_step(&nick_cmd, src, len, state, NULL)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// ' '
 	if (!pm_parse_step(&pm_space, src, len, state, NULL)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// <nickname>
 	r.value.data.str = &nickname;
 	if (!pm_parse_step(&pm_trail, src, len, state, &r)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// Store result(s)
 	struct irc_msg *msg = res->value.data.ptr;
 	msg->cmd = IRC_NICK;
 	msg->nick.nickname = to_irc_str(&nickname);
 	return true;
+	// Store failure state
+fail:
+	res->error.state = *state;
+	return false;
 }
 
 struct pm_parser nick = {
@@ -124,25 +126,21 @@ bool user_fn(const union pm_data d, const char *src, long len, struct pm_state *
 	}
 	// USER
 	if (!pm_parse_step(&user_cmd, src, len, state, NULL)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// ' '
 	if (!pm_parse_step(&pm_space, src, len, state, NULL)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	//  <user>' '
 	r.value.data.str = &user;
 	if (!pm_parse_step(&pm_until_space, src, len, state, &r)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// <mode>' '
 	r.value.data.str = &mode;
 	if (!pm_parse_step(&pm_until_space, src, len, state, &r)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// "* :"
 	char *mode_delim_data = "* :";
@@ -153,13 +151,12 @@ bool user_fn(const union pm_data d, const char *src, long len, struct pm_state *
 	struct pm_parser mode_delim;
 	pm_string(&mode_delim_str, &mode_delim);
 	if (!pm_parse_step(&mode_delim, src, len, state, NULL)) {
-		return false;
+		goto fail;
 	}
 	// <realname>
 	r.value.data.str = &realname;
 	if (!pm_parse_step(&pm_trail, src, len, state, &r)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// Store result(s)
 	struct irc_msg *msg = res->value.data.ptr;
@@ -170,6 +167,10 @@ bool user_fn(const union pm_data d, const char *src, long len, struct pm_state *
 		.realname = to_irc_str(&realname),
 	};
 	return true;
+	// Store failure state
+fail:
+	res->error.state = *state;
+	return false;
 }
 
 struct pm_parser user = {
@@ -191,25 +192,21 @@ bool oper_fn(const union pm_data d, const char *src, long len, struct pm_state *
 	}
 	// OPER
 	if (!pm_parse_step(&oper_cmd, src, len, state, NULL)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// ' '
 	if (!pm_parse_step(&pm_space, src, len, state, NULL)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// <name>' '
 	r.value.data.str = &name;
 	if (!pm_parse_step(&pm_until_space, src, len, state, &r)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// <realname>
 	r.value.data.str = &password;
 	if (!pm_parse_step(&pm_trail, src, len, state, &r)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// Store result(s)
 	struct irc_msg *msg = res->value.data.ptr;
@@ -219,6 +216,10 @@ bool oper_fn(const union pm_data d, const char *src, long len, struct pm_state *
 		.password = to_irc_str(&password),
 	};
 	return true;
+	// Store failure state
+fail:
+	res->error.state = *state;
+	return false;
 }
 
 struct pm_parser oper = {
@@ -240,25 +241,21 @@ bool mode_user_fn(const union pm_data d, const char *src, long len, struct pm_st
 	}
 	// MODE
 	if (!pm_parse_step(&mode_cmd, src, len, state, NULL)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// ' '
 	if (!pm_parse_step(&pm_space, src, len, state, NULL)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// <nickname>' '
 	r.value.data.str = &nickname;
 	if (!pm_parse_step(&pm_until_space, src, len, state, &r)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// <modes>
 	r.value.data.str = &modes;
 	if (!pm_parse_step(&pm_trail, src, len, state, &r)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// Store result(s)
 	struct irc_msg *msg = res->value.data.ptr;
@@ -268,6 +265,10 @@ bool mode_user_fn(const union pm_data d, const char *src, long len, struct pm_st
 		.modes = to_irc_str(&modes),
 	};
 	return true;
+	// Store failure state
+fail:
+	res->error.state = *state;
+	return false;
 }
 
 struct pm_parser mode_user = {
@@ -289,52 +290,43 @@ bool service_fn(const union pm_data d, const char *src, long len, struct pm_stat
 	}
 	// SERVICE
 	if (!pm_parse_step(&service_cmd, src, len, state, NULL)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// ' '
 	if (!pm_parse_step(&pm_space, src, len, state, NULL)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// <nickname>' '
 	r.value.data.str = &nickname;
 	if (!pm_parse_step(&pm_until_space, src, len, state, &r)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// <reserved>' '
 	if (!pm_parse_step(&pm_until_space, src, len, state, NULL)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// <distribution>' '
 	r.value.data.str = &distribution;
 	if (!pm_parse_step(&pm_until_space, src, len, state, &r)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// <type>' '
 	r.value.data.str = &type;
 	if (!pm_parse_step(&pm_until_space, src, len, state, &r)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// <reserved>' '
 	if (!pm_parse_step(&pm_until_space, src, len, state, NULL)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// ':'
 	if (!pm_parse_step(&colon, src, len, state, NULL)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// <info>
 	r.value.data.str = &info;
 	if (!pm_parse_step(&pm_trail, src, len, state, &r)) {
-		res->error.state = *state;
-		return false;
+		goto fail;
 	}
 	// Store result(s)
 	struct irc_msg *msg = res->value.data.ptr;
@@ -346,6 +338,10 @@ bool service_fn(const union pm_data d, const char *src, long len, struct pm_stat
 		.info = to_irc_str(&info),
 	};
 	return true;
+	// Store failure state
+fail:
+	res->error.state = *state;
+	return false;
 }
 
 struct pm_parser service = {
