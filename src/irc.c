@@ -25,6 +25,19 @@ struct irc_str to_irc_str(struct pm_str *str)
 	};
 }
 
+struct irc_opt_str to_irc_opt_str(struct pm_str *str, bool exist)
+{
+	struct irc_opt_str opt_str;
+	opt_str.exist = exist;
+	if (exist) {
+		opt_str.str = (struct irc_str) {
+			.data = (char*)str->data,
+			.len = str->len,
+		};
+	}
+	return opt_str;
+}
+
 struct pm_parser colon = {
 	.self.prim.c = ':',
 	.fn = pm_char_fn,
@@ -436,6 +449,108 @@ struct pm_parser squit = {
 	.self.ptr = NULL,
 	.fn = squit_fn,
 };
+
+PM_STR(JOIN,5)
+struct pm_parser join_cmd = PM_STRING(&JOIN_STR);
+
+static
+bool join_with_key_fn(const union pm_data d, const char *src, long len, struct pm_state *state, struct pm_result *res)
+{
+	// JOIN <channel>[ <key>]
+	struct pm_result r;
+	struct pm_str channel, key;
+	struct irc_msg *msg = res->value.data.ptr;
+	// JOIN
+	if (!pm_parse_step(&join_cmd, src, len, state, NULL)) {
+		goto fail;
+	}
+	// ' '
+	if (!pm_parse_step(&pm_space, src, len, state, NULL)) {
+		goto fail;
+	}
+	// <channel>[' ']
+	r.value.data.str = &channel;
+	if (!pm_parse_step(&pm_until_space, src, len, state, &r)) {
+		goto fail;
+	}
+	// <key>
+	r.value.data.str = &key;
+	if (!pm_parse_step(&pm_trail, src, len, state, &r)) {
+		goto fail;
+	}
+	// Store result(s)
+	msg->cmd = IRC_JOIN;
+	msg->join = (struct irc_join) {
+		.channel = to_irc_str(&channel),
+		.key = to_irc_opt_str(&key, true),
+	};
+	return true;
+	// Store failure state
+fail:
+	res->error.state = *state;
+	return false;
+}
+
+struct pm_parser join_with_key = {
+	.self.ptr = NULL,
+	.fn = join_with_key_fn,
+};
+
+static
+bool join_no_key_fn(const union pm_data d, const char *src, long len, struct pm_state *state, struct pm_result *res)
+{
+	// JOIN <channel>[ <key>]
+	struct pm_result r;
+	struct pm_str channel;
+	struct irc_msg *msg = res->value.data.ptr;
+	// JOIN
+	if (!pm_parse_step(&join_cmd, src, len, state, NULL)) {
+		goto fail;
+	}
+	// ' '
+	if (!pm_parse_step(&pm_space, src, len, state, NULL)) {
+		goto fail;
+	}
+	// <channel>
+	r.value.data.str = &channel;
+	if (!pm_parse_step(&pm_trail, src, len, state, &r)) {
+		goto fail;
+	}
+	// Store result(s)
+	msg->cmd = IRC_JOIN;
+	msg->join = (struct irc_join) {
+		.channel = to_irc_str(&channel),
+		.key = to_irc_opt_str(NULL, false),
+	};
+	return true;
+	// Store failure state
+fail:
+	res->error.state = *state;
+	return false;
+}
+
+struct pm_parser join_no_key = {
+	.self.ptr = NULL,
+	.fn = join_no_key_fn,
+};
+
+static
+bool join_fn(const union pm_data d, const char *src, long len, struct pm_state *state, struct pm_result *res)
+{
+	struct pm_parser parser;
+	struct pm_parser join_opts[2] = {
+		[0] = join_with_key,
+		[1] = join_no_key,
+	};
+	pm_or(join_opts, &parser);
+	return pm_parse_step(&parser, src, len, state, res);
+}
+
+struct pm_parser join = {
+	.self.ptr = NULL,
+	.fn = join_fn,
+};
+
 bool irc_parse(const char *line, long len, struct irc_msg *msg)
 {
 	struct pm_parser msgs[IRC_CMD_SIZE] = {
@@ -447,11 +562,13 @@ bool irc_parse(const char *line, long len, struct irc_msg *msg)
 		[IRC_SERVICE] = service,
 		[IRC_QUIT] = quit,
 		[IRC_SQUIT] = squit,
+		//
+		[IRC_JOIN] = join,
 	};
 
 	struct pm_parsers parsers = {
 		.data = msgs,
-		.len = 8, // IRC_CMD_SIZE,
+		.len = 9, // IRC_CMD_SIZE,
 	};
 
 	struct pm_parser choice;
