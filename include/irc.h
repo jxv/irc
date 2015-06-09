@@ -2,6 +2,7 @@
 #define IRC_H
 
 #include <stdbool.h>
+#include <str.h>
 
 struct irc_str {
 	char *data;
@@ -337,6 +338,6 @@ struct irc_msg {
 	};
 };
 
-bool irc_parse(const char *line, long len, struct irc_msg *msg);
+bool irc_parse(const str_t *line, struct irc_msg *msg);
 
 #endif
