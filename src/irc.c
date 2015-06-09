@@ -1,8 +1,5 @@
 #include "irc.h"
 #include <parmach.h>
-#include <stdio.h>
-
-#define IRC_CMD_GRP 1
 
 char PASS[] = "PASS";
 char NICK[] = "NICK";
@@ -761,7 +758,7 @@ bool numeric(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t
 bool irc_parse(const str_t *line, struct irc_msg *msg)
 {
 	pm_result_t res = { .data.ptr = msg };
-	pm_parser_t msgs_arr[IRC_CMD_SIZE] = {
+	static pm_parser_t msgs_arr[IRC_CMD_SIZE] = {
 		[IRC_PASS] = PM_FN(pass),
 		[IRC_NICK] = PM_FN(nick),
 		[IRC_USER] = PM_FN(user),
@@ -810,7 +807,7 @@ bool irc_parse(const str_t *line, struct irc_msg *msg)
 		[IRC_ISON] = PM_FN(ison),
 		[IRC_NUMERIC] = PM_FN(numeric),
 	};
-	pm_parsers_t msgs_par = { .data = msgs_arr, .len = IRC_CMD_SIZE };
-	pm_parser_t msgs = PM_CHOICE_TRY(&msgs_par);
+	static pm_parsers_t msgs_par = { .data = msgs_arr, .len = IRC_CMD_SIZE };
+	static pm_parser_t msgs = PM_CHOICE_TRY(&msgs_par);
 	return pm_parse(&msgs, line, &res);
 }
