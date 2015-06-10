@@ -147,8 +147,7 @@ struct irc_opt_str to_irc_opt_str(str_t *str, bool exist)
 }
 
 
-static
-bool pass(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool pass(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	// PASS <password>
 	pm_result_t r;
@@ -172,8 +171,7 @@ fail:
 	return false;
 }
 
-static
-bool nick(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool nick(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	// NICK <nickname>
 	pm_result_t r;
@@ -198,8 +196,7 @@ fail:
 }
 
 
-static
-bool user(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool user(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	// USER <user> <mode> * :<realname>
 	pm_result_t r;
@@ -238,8 +235,7 @@ fail:
 }
 
 
-static
-bool oper(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool oper(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	// OPER <name> <password>
 	pm_result_t r;
@@ -267,8 +263,7 @@ fail:
 	return false;
 }
 
-static
-bool mode_user(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool mode_user(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	// MODE <nickname> <modes>
 	pm_result_t r;
@@ -296,8 +291,7 @@ fail:
 	return false;
 }
 
-static
-bool service(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool service(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	// SERVICE <nickname> <reserved> <distribution> <type> <reserved> :<info>
 	pm_result_t r;
@@ -342,8 +336,7 @@ fail:
 	return false;
 }
 
-static
-bool quit(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool quit(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	// QUIT[ :<msg>]
 	pm_result_t r;
@@ -375,12 +368,10 @@ fail:
 	return false;
 }
 
-static
-bool squit(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool squit(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	// SQUIT <server> :<comment>
 	pm_result_t r;
-	str_t server, comment;
 	irc_msg_t *msg = res->data.ptr;
 	// SQUIT
 	if (!pm_parse_step(&service_cmd, src, state, NULL))
@@ -389,22 +380,18 @@ bool squit(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *
 	if (!pm_parse_step(&pm_space, src, state, NULL))
 		goto fail;
 	// <server>' '
-	r.data.ptr = &server;
+	r.data.ptr = &msg->squit.server;
 	if (!pm_parse_step(&pm_until_space, src, state, &r))
 		goto fail;
 	// ':'
 	if (!pm_parse_step(&colon, src, state, NULL))
 		goto fail;
 	// <comment>
-	r.data.ptr = &comment;
+	r.data.ptr = &msg->squit.comment;
 	if (!pm_parse_step(&pm_trail, src, state, &r))
 		goto fail;
 	// Store result(s)
 	msg->cmd = IRC_SQUIT;
-	msg->squit = (struct irc_squit) {
-		.server = server,
-		.comment = comment,
-	};
 	return true;
 	// Store failure state
 fail:
@@ -412,12 +399,10 @@ fail:
 	return false;
 }
 
-static
-bool join_with_key(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool join_with_key(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	// JOIN <channel>[ <key>]
 	pm_result_t r;
-	str_t channel, key;
 	irc_msg_t *msg = res->data.ptr;
 	// JOIN
 	if (!pm_parse_step(&join_cmd, src, state, NULL))
@@ -426,19 +411,16 @@ bool join_with_key(const pm_data_t d, const str_t *src, pm_state_t *state, pm_re
 	if (!pm_parse_step(&pm_space, src, state, NULL))
 		goto fail;
 	// <channel>[' ']
-	r.data.ptr = &channel;
+	r.data.ptr = &msg->join.channel;
 	if (!pm_parse_step(&pm_until_space, src, state, &r))
 		goto fail;
 	// <key>
-	r.data.ptr = &key;
+	r.data.ptr = &msg->join.key.str;
 	if (!pm_parse_step(&pm_trail, src, state, &r))
 		goto fail;
 	// Store result(s)
 	msg->cmd = IRC_JOIN;
-	msg->join = (struct irc_join) {
-		.channel = channel,
-		.key = to_irc_opt_str(&key, true),
-	};
+	msg->join.key.exist = true;
 	return true;
 	// Store failure state
 fail:
@@ -446,12 +428,10 @@ fail:
 	return false;
 }
 
-static
-bool join_no_key(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool join_no_key(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	// JOIN <channel>[ <key>]
 	pm_result_t r;
-	str_t channel;
 	irc_msg_t *msg = res->data.ptr;
 	// JOIN
 	if (!pm_parse_step(&join_cmd, src, state, NULL))
@@ -460,15 +440,12 @@ bool join_no_key(const pm_data_t d, const str_t *src, pm_state_t *state, pm_resu
 	if (!pm_parse_step(&pm_space, src, state, NULL))
 		goto fail;
 	// <channel>
-	r.data.ptr = &channel;
+	r.data.ptr = &msg->join.channel;
 	if (!pm_parse_step(&pm_trail, src, state, &r))
 		goto fail;
 	// Store result(s)
 	msg->cmd = IRC_JOIN;
-	msg->join = (struct irc_join) {
-		.channel = channel,
-		.key = to_irc_opt_str(NULL, false),
-	};
+	msg->join.key.exist = false;
 	return true;
 	// Store failure state
 fail:
@@ -476,58 +453,49 @@ fail:
 	return false;
 }
 
-static
-bool join(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool join(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
-	static pm_parser_t joins[2] = { PM_FN(join_with_key), PM_FN(join_no_key) };
-	static pm_parser_t parser = PM_OR(joins);
+	const static pm_parser_t joins[2] = { PM_FN(join_with_key), PM_FN(join_no_key) };
+	const static pm_parser_t parser = PM_OR((void *)&joins);
 	return pm_parse_step(&parser, src, state, res);
 }
 
-static
-bool part(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool part(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool mode_channel(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool mode_channel(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool topic(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool topic(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool names(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool names(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool list(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool list(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool invite(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool invite(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool kick(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool kick(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool privmsg(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool privmsg(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	// PRIVMSG <target>  :<msg>
 	pm_result_t r;
@@ -558,182 +526,152 @@ fail:
 	return false;
 }
 
-static
-bool notice(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool notice(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool motd(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool motd(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool lusers(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool lusers(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool version(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool version(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool stats(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool stats(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool links(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool links(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool time(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool time(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool connect(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool connect(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool trace(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool trace(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool admin(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool admin(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool info(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool info(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool servlist(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool servlist(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool squery(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool squery(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool who(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool who(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool whois(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool whois(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool whowas(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool whowas(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool kill(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool kill(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool ping(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool ping(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool pong(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool pong(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool error(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool error(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool away(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool away(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool rehash(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool rehash(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool die(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool die(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool restart(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool restart(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool summon(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool summon(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool users(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool users(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool wallops(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool wallops(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool userhost(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool userhost(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool ison(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool ison(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
 
-static
-bool numeric(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+static bool numeric(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
 	return false;
 }
