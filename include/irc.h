@@ -4,14 +4,9 @@
 #include <stdbool.h>
 #include <str.h>
 
-struct irc_str {
-	char *data;
-	int len;
-};
-
 struct irc_opt_str {
 	bool exist;
-	struct irc_str str;
+	str_t str;
 };
 
 enum irc_cmd {
@@ -76,34 +71,34 @@ enum irc_cmd {
 #define IRC_CMD_SIZE (IRC_NUMERIC+1)
 
 struct irc_pass {
-	struct irc_str password;
+	str_t password;
 };
 
 struct irc_nick {
-	struct irc_str nickname;
+	str_t nickname;
 };
 
 struct irc_user {
-	struct irc_str user;
-	struct irc_str mode;
-	struct irc_str realname;
+	str_t user;
+	str_t mode;
+	str_t realname;
 };
 
 struct irc_oper {
-	struct irc_str name;
-	struct irc_str password;
+	str_t name;
+	str_t password;
 };
 
 struct irc_mode_user {
-	struct irc_str nickname;
-	struct irc_str modes;
+	str_t nickname;
+	str_t modes;
 };
 
 struct irc_service {
-	struct irc_str nickname;
-	struct irc_str distribution;
-	struct irc_str type;
-	struct irc_str info;
+	str_t nickname;
+	str_t distribution;
+	str_t type;
+	str_t info;
 };
 
 struct irc_quit {
@@ -111,61 +106,61 @@ struct irc_quit {
 };
 
 struct irc_squit {
-	struct irc_str server;
-	struct irc_str comment;
+	str_t server;
+	str_t comment;
 };
 
 struct irc_join {
-	struct irc_str channel;
+	str_t channel;
 	struct irc_opt_str key;
 };
 
 struct irc_part {
-	struct irc_str channel;
+	str_t channel;
 	struct irc_opt_str msg;
 };
 
 struct irc_mode_channel {
-	struct irc_str channel;
+	str_t channel;
 	bool crement;
 	struct irc_opt_str modes;
 	struct irc_opt_str params;
 };
 
 struct irc_topic {
-	struct irc_str channel;
+	str_t channel;
 	struct irc_opt_str topic;
 };
 
 struct irc_names {
-	struct irc_str channel; // [, channel]
+	str_t channel; // [, channel]
 	struct irc_opt_str target;
 };
 
 struct irc_list {
-	struct irc_str channel; // [, channel]
+	str_t channel; // [, channel]
 	struct irc_opt_str target;
 };
 
 struct irc_invite {
-	struct irc_str nickname;
-	struct irc_str channel;
+	str_t nickname;
+	str_t channel;
 };
 
 struct irc_kick {
-	struct irc_str channel; // [, channel]
-	struct irc_str user; // [, user]
+	str_t channel; // [, channel]
+	str_t user; // [, user]
 	struct irc_opt_str comment;
 };
 
 struct irc_privmsg {
-	struct irc_str target;
-	struct irc_str msg;
+	str_t target;
+	str_t msg;
 };
 
 struct irc_notice {
-	struct irc_str target;
-	struct irc_str msg;
+	str_t target;
+	str_t msg;
 };
 
 struct irc_motd {
@@ -173,7 +168,7 @@ struct irc_motd {
 };
 
 struct irc_lusers {
-	struct irc_str mask;
+	str_t mask;
 	struct irc_opt_str target;
 };
 
@@ -192,12 +187,12 @@ struct irc_links {
 };
 
 struct irc_time {
-	struct irc_str target;
+	str_t target;
 };
 
 struct irc_connect {
-	struct irc_str target;
-	struct irc_str port;
+	str_t target;
+	str_t port;
 	struct irc_opt_str remote_server;
 };
 
@@ -219,8 +214,8 @@ struct irc_servlist {
 };
 
 struct irc_squery {
-	struct irc_str service_name;
-	struct irc_str msg;
+	str_t service_name;
+	str_t msg;
 };
 
 struct irc_who {
@@ -230,32 +225,32 @@ struct irc_who {
 
 struct irc_whois {
 	struct irc_opt_str target;
-	struct irc_str mask; // [mask]
+	str_t mask; // [mask]
 };
 
 struct irc_whowas {
-	struct irc_str nickname; // [, nickname]
+	str_t nickname; // [, nickname]
 	struct irc_opt_str count;
 	struct irc_opt_str target;
 };
 
 struct irc_kill {
-	struct irc_str nickname;
-	struct irc_str comment;
+	str_t nickname;
+	str_t comment;
 };
 
 struct irc_ping {
-	struct irc_str server0;
+	str_t server0;
 	struct irc_opt_str server1;
 };
 
 struct irc_pong {
-	struct irc_str server0;
+	str_t server0;
 	struct irc_opt_str server1;
 };
 
 struct irc_error {
-	struct irc_str msg;
+	str_t msg;
 };
 
 struct irc_away {
@@ -263,7 +258,7 @@ struct irc_away {
 };
 
 struct irc_summon {
-	struct irc_str user;
+	str_t user;
 	struct irc_opt_str target;
 	struct irc_opt_str channel;
 };
@@ -273,7 +268,7 @@ struct irc_users {
 };
 
 struct irc_wallops {
-	struct irc_str msg;
+	str_t msg;
 };
 
 struct irc_userhost {
@@ -338,6 +333,8 @@ struct irc_msg {
 	};
 };
 
-bool irc_parse(const str_t *line, struct irc_msg *msg);
+typedef struct irc_msg irc_msg_t;
+
+bool irc_parse(const str_t *line, irc_msg_t *msg);
 
 #endif
