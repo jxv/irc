@@ -137,9 +137,9 @@ const pm_parser_t ison_cmd = PM_STRING(&ison_str);
 
 const pm_parser_t colon = PM_CHAR(':');
 
-struct irc_opt_str to_irc_opt_str(str_t *str, bool exist)
+optstr_t to_irc_opt_str(str_t *str, bool exist)
 {
-	struct irc_opt_str opt_str;
+	optstr_t opt_str;
 	opt_str.exist = exist;
 	if (exist)
 		opt_str.str = *str;

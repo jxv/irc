@@ -4,11 +4,6 @@
 #include <stdbool.h>
 #include <str.h>
 
-struct irc_opt_str {
-	bool exist;
-	str_t str;
-};
-
 enum irc_cmd {
 	// Connection Registration
 	IRC_PASS,
@@ -102,7 +97,7 @@ struct irc_service {
 };
 
 struct irc_quit {
-	struct irc_opt_str msg;
+	optstr_t msg;
 };
 
 struct irc_squit {
@@ -112,34 +107,34 @@ struct irc_squit {
 
 struct irc_join {
 	str_t channel;
-	struct irc_opt_str key;
+	optstr_t key;
 };
 
 struct irc_part {
 	str_t channel;
-	struct irc_opt_str msg;
+	optstr_t msg;
 };
 
 struct irc_mode_channel {
 	str_t channel;
 	bool crement;
-	struct irc_opt_str modes;
-	struct irc_opt_str params;
+	optstr_t modes;
+	optstr_t params;
 };
 
 struct irc_topic {
 	str_t channel;
-	struct irc_opt_str topic;
+	optstr_t topic;
 };
 
 struct irc_names {
 	str_t channel; // [, channel]
-	struct irc_opt_str target;
+	optstr_t target;
 };
 
 struct irc_list {
 	str_t channel; // [, channel]
-	struct irc_opt_str target;
+	optstr_t target;
 };
 
 struct irc_invite {
@@ -150,7 +145,7 @@ struct irc_invite {
 struct irc_kick {
 	str_t channel; // [, channel]
 	str_t user; // [, user]
-	struct irc_opt_str comment;
+	optstr_t comment;
 };
 
 struct irc_privmsg {
@@ -164,26 +159,26 @@ struct irc_notice {
 };
 
 struct irc_motd {
-	struct irc_opt_str target;
+	optstr_t target;
 };
 
 struct irc_lusers {
 	str_t mask;
-	struct irc_opt_str target;
+	optstr_t target;
 };
 
 struct irc_version {
-	struct irc_opt_str target;
+	optstr_t target;
 };
 
 struct irc_stats {
-	struct irc_opt_str query;
-	struct irc_opt_str target;
+	optstr_t query;
+	optstr_t target;
 };
 
 struct irc_links {
-	struct irc_opt_str remote_server;
-	struct irc_opt_str server_mask;
+	optstr_t remote_server;
+	optstr_t server_mask;
 };
 
 struct irc_time {
@@ -193,24 +188,24 @@ struct irc_time {
 struct irc_connect {
 	str_t target;
 	str_t port;
-	struct irc_opt_str remote_server;
+	optstr_t remote_server;
 };
 
 struct irc_trace {
-	struct irc_opt_str target;
+	optstr_t target;
 };
 
 struct irc_admin {
-	struct irc_opt_str target;
+	optstr_t target;
 };
 
 struct irc_info {
-	struct irc_opt_str target;
+	optstr_t target;
 };
 
 struct irc_servlist {
-	struct irc_opt_str mask;
-	struct irc_opt_str type;
+	optstr_t mask;
+	optstr_t type;
 };
 
 struct irc_squery {
@@ -219,19 +214,19 @@ struct irc_squery {
 };
 
 struct irc_who {
-	struct irc_opt_str mask;
+	optstr_t mask;
 	bool o;
 };
 
 struct irc_whois {
-	struct irc_opt_str target;
+	optstr_t target;
 	str_t mask; // [mask]
 };
 
 struct irc_whowas {
 	str_t nickname; // [, nickname]
-	struct irc_opt_str count;
-	struct irc_opt_str target;
+	optstr_t count;
+	optstr_t target;
 };
 
 struct irc_kill {
@@ -241,12 +236,12 @@ struct irc_kill {
 
 struct irc_ping {
 	str_t server0;
-	struct irc_opt_str server1;
+	optstr_t server1;
 };
 
 struct irc_pong {
 	str_t server0;
-	struct irc_opt_str server1;
+	optstr_t server1;
 };
 
 struct irc_error {
@@ -254,17 +249,17 @@ struct irc_error {
 };
 
 struct irc_away {
-	struct irc_opt_str msg;
+	optstr_t msg;
 };
 
 struct irc_summon {
 	str_t user;
-	struct irc_opt_str target;
-	struct irc_opt_str channel;
+	optstr_t target;
+	optstr_t channel;
 };
 
 struct irc_users {
-	struct irc_opt_str target;
+	optstr_t target;
 };
 
 struct irc_wallops {
@@ -272,11 +267,11 @@ struct irc_wallops {
 };
 
 struct irc_userhost {
-	struct irc_opt_str nicknames;
+	optstr_t nicknames;
 };
 
 struct irc_ison {
-	struct irc_opt_str nicknames;
+	optstr_t nicknames;
 };
 
 struct irc_numeric {
