@@ -301,8 +301,8 @@ struct irc_numeric {
 struct irc_msg {
 	irc_sender_t sender;
 	union {
-		struct irc_sender_user;
-		struct irc_sender_server;
+		struct irc_sender_user sender_user;
+		struct irc_sender_server sender_server;
 	};
 	irc_cmd_t cmd;
 	union {
