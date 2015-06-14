@@ -4,6 +4,24 @@
 #include <stdbool.h>
 #include <str.h>
 
+enum irc_sender {
+	IRC_SENDER_YOU,
+	IRC_SENDER_USER,
+	IRC_SENDER_SERVER,
+};
+
+typedef enum irc_sender irc_sender_t;
+
+struct irc_sender_user {
+	str_t nickname;
+	optstr_t username;
+	optstr_t servername;
+};
+
+struct irc_sender_server {
+	str_t name;
+};
+
 enum irc_cmd {
 	// Connection Registration
 	IRC_PASS,
@@ -64,6 +82,8 @@ enum irc_cmd {
 };
 
 #define IRC_CMD_SIZE (IRC_NUMERIC+1)
+
+typedef enum irc_cmd irc_cmd_t;
 
 struct irc_pass {
 	str_t password;
@@ -279,7 +299,12 @@ struct irc_numeric {
 };
 
 struct irc_msg {
-	enum irc_cmd cmd;
+	irc_sender_t sender;
+	union {
+		struct irc_sender_user;
+		struct irc_sender_server;
+	};
+	irc_cmd_t cmd;
 	union {
 		struct irc_pass pass;
 		struct irc_nick nick;
