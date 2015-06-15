@@ -1,6 +1,49 @@
 #include "irc.h"
 #include <parmach.h>
 
+const pm_parser_t colon = PM_CHAR(':');
+const pm_parser_t bang = PM_CHAR('!');
+const pm_parser_t ear = PM_CHAR('@');
+
+const pm_parser_t until_bang = PM_UNTIL((void *)&bang);
+const pm_parser_t until_ear = PM_UNTIL((void *)&ear);
+
+static bool sender_user(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+{
+	// :<nickname>![<username>]@[<servername>]' '
+	pm_result_t r;
+	irc_msg_t *msg = res->data.ptr;
+	// ':'
+	if (!pm_parse_step(&colon, src, state, NULL))
+		goto fail;
+	// <nickname>'!'
+	r.data.ptr = &msg->sender_user.nickname;
+	if (!pm_parse_step(&until_bang, src, state, &r))
+		goto fail;
+	// [<username>]'@'
+	r.data.ptr = &msg->sender_user.username.str;
+	if (!pm_parse_step(&until_ear, src, state, &r))
+		goto fail;
+	// [<servername>]' '
+	r.data.ptr = &msg->sender_user.servername.str;
+	if (!pm_parse_step(&until_bang, src, state, &r))
+		goto fail;
+	// Store result(s)
+	msg->sender = IRC_SENDER_USER;
+	return true;
+	// Store failure state
+fail:
+	res->error.state = *state;
+	return false;
+}
+
+static bool sender_fn(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+{
+	return sender_user(d, src, state, res);
+}
+
+const pm_parser_t sender = PM_FN(sender_fn);
+
 char PASS[] = "PASS";
 char NICK[] = "NICK";
 char USER[] = "USER";
@@ -134,8 +177,6 @@ const pm_parser_t users_cmd = PM_STRING(&users_str);
 const pm_parser_t wallops_cmd = PM_STRING(&wallops_str);
 const pm_parser_t userhost_cmd = PM_STRING(&userhost_str);
 const pm_parser_t ison_cmd = PM_STRING(&ison_str);
-
-const pm_parser_t colon = PM_CHAR(':');
 
 optstr_t to_irc_opt_str(str_t *str, bool exist)
 {
@@ -676,9 +717,8 @@ static bool numeric(const pm_data_t d, const str_t *src, pm_state_t *state, pm_r
 	return false;
 }
 
-bool irc_parse(const str_t *line, irc_msg_t *msg)
+static bool cmd_fn(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
 {
-	pm_result_t res = { .data.ptr = msg };
 	const static pm_parser_t msgs_arr[IRC_CMD_SIZE] = {
 		[IRC_PASS] = PM_FN(pass),
 		[IRC_NICK] = PM_FN(nick),
@@ -730,5 +770,20 @@ bool irc_parse(const str_t *line, irc_msg_t *msg)
 	};
 	const static pm_parsers_t msgs_par = { .data = (void *)msgs_arr, .len = IRC_CMD_SIZE };
 	const static pm_parser_t msgs = PM_CHOICE_TRY((void *)&msgs_par);
-	return pm_parse(&msgs, line, &res);
+	return pm_parse_step(&msgs, src, state, res);
+}
+
+const pm_parser_t cmd = PM_FN(cmd_fn);
+
+static bool parser_fn(const pm_data_t d, const str_t *src, pm_state_t *state, pm_result_t *res)
+{
+	return pm_parse_step(&sender, src, state, res) && pm_parse_step(&cmd, src, state, res);
+}
+
+const pm_parser_t parser = PM_FN(parser_fn);
+
+bool irc_parse(const str_t *line, irc_msg_t *msg)
+{
+	pm_result_t res = { .data.ptr = msg };
+	return pm_parse(&parser, line, &res);
 }
